@@ -1,12 +1,10 @@
-import express from "express"
-import { conteudo } from "./database/Conteudo.js"
-import Joi from "joi"
-import { usuarios } from "./database/Usuario.js"
-import crypto from "crypto-js"
+import express from "express";
+import { conteudo } from "./database/Conteudo.js";
+import Joi from "joi";
+import { usuarios } from "./database/Usuario.js";
+import crypto from "crypto-js";
 
-
- 
-const rotas = express.Router()
+const rotas = express.Router();
 
 const esquema = Joi.object({
   capa: Joi.string().uri().required(),
@@ -16,121 +14,148 @@ const esquema = Joi.object({
   genero: Joi.string().required(),
   ano: Joi.number().required(),
   duracao: Joi.number().required(),
-  faixa: Joi.number().required()
-})
+  faixa: Joi.number().required(),
+});
 
- // listar todos os conteúdos
-rotas.get("/conteudos", function(requisicao, resposta) {
-    conteudo.get()
-    .then(function(query) {
-      const resultados = query.docs.map(function(doc) {
-        return { id: doc.id, ...doc.data() }
-      })
- 
-      if (resultados.length > 0)
-        resposta.status(200).json(resultados)
-      else resposta.status(404).json({
-        mensagem: "Nenhum resultado encontrado!"
-      })
+// listar todos os conteúdos
+rotas.get("/conteudos", function (requisicao, resposta) {
+  conteudo
+    .get()
+    .then(function (query) {
+      const resultados = query.docs.map(function (doc) {
+        return { id: doc.id, ...doc.data() };
+      });
+
+      if (resultados.length > 0) resposta.status(200).json(resultados);
+      else
+        resposta.status(404).json({
+          mensagem: "Nenhum resultado encontrado!",
+        });
     })
-    .catch(function(erro) {
-      resposta.status(500).json({ mensagem: erro.message })
-    })
-})
+    .catch(function (erro) {
+      resposta.status(500).json({ mensagem: erro.message });
+    });
+});
 
 // listar todos os gêneros
-rotas.get("/generos", function(requisicao, resposta) {
-  conteudo.get()
-    .then(function(query) {
-      const resultados = query.docs.map(function(doc) {
-        return { id: doc.id, ...doc.data() }
-      })
+rotas.get("/generos", function (requisicao, resposta) {
+  conteudo
+    .get()
+    .then(function (query) {
+      const resultados = query.docs.map(function (doc) {
+        return { id: doc.id, ...doc.data() };
+      });
       if (resultados.length > 0) {
-        var lista = new Array()
-        resultados.map(function(item) {
-          if (!lista.includes(item.genero))
-            return lista.push(item.genero)
-        })
-        resposta.status(200).json(lista)
-      } else resposta.status(404).json({
-        mensagem: "Nenhum resultado encontrado!"
-      })
+        var lista = new Array();
+        resultados.map(function (item) {
+          if (!lista.includes(item.genero)) return lista.push(item.genero);
+        });
+        resposta.status(200).json(lista);
+      } else
+        resposta.status(404).json({
+          mensagem: "Nenhum resultado encontrado!",
+        });
     })
-    .catch(function(erro) {
-      resposta.status(500).json({ mensagem: erro.message })
-    })
-})
+    .catch(function (erro) {
+      resposta.status(500).json({ mensagem: erro.message });
+    });
+});
 
 // consultar o conteúdo único do banco de dados
-rotas.get("/conteudo/:codigo", function(requisicao, resposta) {
+rotas.get("/conteudo/:codigo", function (requisicao, resposta) {
   // consultar o conteúdo único do banco de dados
-  const {codigo} = requisicao.params
-  conteudo.doc(codigo).get()
-    .then(function(documento) {
+  const { codigo } = requisicao.params;
+  conteudo
+    .doc(codigo)
+    .get()
+    .then(function (documento) {
       if (documento.exists)
-        resposta.status(200).json({ id: documento.id, ...documento.data() })
-      else resposta.status(404).json({
-        mensagem: "Nenhum resultado encontrado!"
-      })
+        resposta.status(200).json({ id: documento.id, ...documento.data() });
+      else
+        resposta.status(404).json({
+          mensagem: "Nenhum resultado encontrado!",
+        });
     })
-    .catch(function(erro) {
-      resposta.status(500).json({ mensagem: erro.message })
-    })
-})
+    .catch(function (erro) {
+      resposta.status(500).json({ mensagem: erro.message });
+    });
+});
 
 // salvar o conteúdo no banco de dados
-rotas.post("/conteudo", async function(requisicao, resposta) {
+rotas.post("/conteudo", async function (requisicao, resposta) {
   // salvar o conteúdo no banco de dados
-  const corpo = requisicao.body
+  const corpo = requisicao.body;
   try {
-    const validado = await esquema.validateAsync(corpo)
-    conteudo.add(validado)
-      .then(function(referencia) {
-        resposta.status(201).json({ id: referencia.id, ...validado })
+    const validado = await esquema.validateAsync(corpo);
+    conteudo
+      .add(validado)
+      .then(function (referencia) {
+        resposta.status(201).json({ id: referencia.id, ...validado });
       })
-      .catch(function(erro) {
-        resposta.status(500).json({ mensagem: erro.message })
-      })
+      .catch(function (erro) {
+        resposta.status(500).json({ mensagem: erro.message });
+      });
   } catch (erro) {
-    resposta.status(400).json({ mensagem: erro.message })
+    resposta.status(400).json({ mensagem: erro.message });
   }
-})
+});
 
 // login do usuário
-rotas.post("/entrar", async function(requisicao, resposta) {
-  
-  const corpo = requisicao.body
+rotas.post("/entrar", async function (requisicao, resposta) {
+  const corpo = requisicao.body;
   const esquema = Joi.object({
     email: Joi.string().email().max(128).required(),
-    senha: Joi.string().required()
-  })
+    senha: Joi.string().required(),
+  });
 
   try {
-    const validado = await esquema.validateAsync(corpo)
-    console.log("Email recebido:", validado.email)
-    console.log("Senha recebida:", validado.senha)
-    console.log("Hash gerada:", crypto.SHA256(validado.senha).toString())
+    const validado = await esquema.validateAsync(corpo);
+    console.log("Email recebido:", validado.email);
+    console.log("Senha recebida:", validado.senha);
+    console.log("Hash gerada:", crypto.SHA256(validado.senha).toString());
     usuarios
       .where("email", "==", validado.email)
       .where("senha", "==", crypto.SHA256(validado.senha).toString())
       .get()
-      .then(function(resultado) {
-        if (!resultado.empty)
-          resposta.sendStatus(202)
-        else
-          resposta.sendStatus(401)
+      .then(function (resultado) {
+        if (!resultado.empty) resposta.sendStatus(202);
+        else resposta.sendStatus(401);
       })
-      .catch(function(erro) {
-        resposta.status(500).json({ mensagem: erro.message })
+      .catch(function (erro) {
+        resposta.status(500).json({ mensagem: erro.message });
+      });
+  } catch (erro) {
+    resposta.status(400).json({ mensagem: erro.message });
+  }
+});
+
+//Cadastrar usuário
+rotas.post("/usuarios", async function (requisicao, resposta) {
+  const corpo = requisicao.body;
+
+  const esquema = Joi.object({
+    email: Joi.string().email().max(128).required(),
+    senha: Joi.string().required(),
+  });
+
+  try {
+    const validado = await esquema.validateAsync(corpo);
+
+    usuarios
+      .add({
+        email: validado.email,
+        senha: crypto.SHA256(validado.senha).toString(),
       })
 
-}
-  catch(erro) {
-    resposta.status(400).json({ mensagem: erro.message })
-}
+      .then(function (referencia) {
+        resposta.status(201).json({ id: referencia.id });
+      })
+      .catch(function (erro) {
+        resposta.status(500).json({ mensagem: erro.message });
+      });
+  } catch (erro) {
+    resposta.status(400).json({ mensagem: erro.message });
+  }
+});
 
-
-})
-
-
-export default rotas
+export default rotas;
